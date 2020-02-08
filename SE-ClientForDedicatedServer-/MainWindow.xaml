@@ -5,6 +5,82 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SE_ClientForDedicatedServer_"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid/>
+        Title="MainWindow" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <local:PCUConverter x:Key="pcuConverter"/>
+    </Window.Resources>
+    <Grid>
+        <Menu HorizontalAlignment="Left" Height="31" Margin="10,10,0,0" VerticalAlignment="Top" Width="772">
+            <Button Width="20" Click="Button_Click" Height="12" RenderTransformOrigin="0.5,1.167"/>
+            <MenuItem Header="авыпвап">
+                <Button/>
+                <MenuItem/>
+                <RadioButton/>
+            </MenuItem>
+        </Menu>
+        <TabControl HorizontalAlignment="Left" Height="363" Margin="10,46,0,0" VerticalAlignment="Top" Width="772">
+            <TabItem Header="TabItem">
+                <Grid Background="#FFE5E5E5">
+                    <GroupBox Header="Players Activity" HorizontalAlignment="Left" Height="115" Margin="10,10,0,0" VerticalAlignment="Top" Width="262"/>
+                    <GroupBox Header="Grids In The Dump" HorizontalAlignment="Left" Height="115" Margin="391,10,0,0" VerticalAlignment="Top" Width="332"/>
+                    <Separator HorizontalAlignment="Left" Height="19" Margin="10,234,0,0" VerticalAlignment="Top" Width="746"/>
+                    <TextBox HorizontalAlignment="Left" Height="23" Margin="10,284,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+                    <Slider HorizontalAlignment="Left" Margin="246,284,0,0" VerticalAlignment="Top" Width="144"/>
+                    <Label Content="Dump GPS Location:" HorizontalAlignment="Left" Margin="10,253,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.474,0.577"/>
+                    <CheckBox Content="By Fraction" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="194,259,0,0"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="TabItem">
+                <Grid Background="#FFE5E5E5">
+                    <ListView HorizontalAlignment="Left" Height="263" Margin="10,62,0,0" VerticalAlignment="Top" Width="416">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Player Name" Width="140">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="PCU Total" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <ProgressBar Value="{Binding PCU}"/>
+                                                <TextBlock Text="{Binding PCU, Converter={StaticResource pcuConverter}}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Grids Amount" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding GridAmount}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <GroupBox Header="Player Info" HorizontalAlignment="Left" Height="315" Margin="451,10,0,0" VerticalAlignment="Top" Width="305">
+                        <Grid>
+                            <Label Content="Name:" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="20,10,0,0"/>
+                            <TextBox Margin="20,36,129,237" IsEnabled="False"></TextBox>
+
+                            <ListView Margin="20,99,25,10">
+
+                            </ListView>
+                        </Grid>
+
+                    </GroupBox>
+                    <TextBox HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="Player Nmae, Grid Name, PCU" VerticalAlignment="Top" Width="416"/>
+                    <Label Content="Search:" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top"/>
+
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+        
+    </Grid>
 </Window>
