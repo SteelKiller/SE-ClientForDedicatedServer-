@@ -4,51 +4,99 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SE_ClientForDedicatedServer_"
+        xmlns:static="clr-namespace:SE_ClientForDedicatedServer_.Static"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" WindowStartupLocation="CenterScreen">
-    
+        Title="MainWindow" Height="501" Width="800" WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded"
+        Closed="Window_Closed">
+
     <Window.Resources>
         <local:PCUConverter x:Key="pcuConverter"/>
+        <local:LastLoginOnlineConverter x:Key="LastLoginConverter"/>
+        <static:MyStatic x:Key="MAX"/>
     </Window.Resources>
     <Grid>
-        <Menu HorizontalAlignment="Left" Height="31" Margin="10,10,0,0" VerticalAlignment="Top" Width="772">
-            <Button Width="20" Click="Button_Click" Height="12" RenderTransformOrigin="0.5,1.167"/>
-            <MenuItem Header="авыпвап">
-                <Button/>
-                <MenuItem/>
-                <RadioButton/>
+        <Menu HorizontalAlignment="Left" Height="24" Margin="10,10,0,0" VerticalAlignment="Top" Width="772">
+            <MenuItem Header="Connect" Width="70"  Click="Button_Click" Height="22" RenderTransformOrigin="0.5,1.167"/>
+            <MenuItem Header="Settings">
+                <MenuItem Header="Dump Manager" Click="MenuItem_DumpManager_Click"/>
+                <MenuItem Header="Grid Manager" Click="MenuItem_GridManager_Click"/>
             </MenuItem>
         </Menu>
-        <TabControl HorizontalAlignment="Left" Height="363" Margin="10,46,0,0" VerticalAlignment="Top" Width="772">
+        <TabControl HorizontalAlignment="Left" Height="414" Margin="10,46,0,0" VerticalAlignment="Top" Width="772">
             <TabItem Header="TabItem">
                 <Grid Background="#FFE5E5E5">
-                    <GroupBox Header="Players Activity" HorizontalAlignment="Left" Height="115" Margin="10,10,0,0" VerticalAlignment="Top" Width="262"/>
-                    <GroupBox Header="Grids In The Dump" HorizontalAlignment="Left" Height="115" Margin="391,10,0,0" VerticalAlignment="Top" Width="332"/>
+                    <GroupBox Header="Players Activity" HorizontalAlignment="Left" Height="157" Margin="10,10,0,0" VerticalAlignment="Top" Width="305">
+                        <ListView x:Name="lv_PlyersActivity" HorizontalAlignment="Left" Height="116" Margin="10,10,0,0" VerticalAlignment="Top" Width="272">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Player Name" Width="140">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" Width="130" TextAlignment="Center"></TextBlock>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Last Playrs Online" Width="110">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding LastLoginTime, Converter={StaticResource LastLoginConverter}}" Width="100" TextAlignment="Center"></TextBlock>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </GroupBox>
+                    <GroupBox Header="Grids In The Dump" HorizontalAlignment="Left" Height="157" Margin="391,10,0,0" VerticalAlignment="Top" Width="332">
+                        <ListView x:Name="lv_GridInTheDump" HorizontalAlignment="Left" Height="118" Margin="10,10,-2,0" VerticalAlignment="Top" Width="312">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </GroupBox>
                     <Separator HorizontalAlignment="Left" Height="19" Margin="10,234,0,0" VerticalAlignment="Top" Width="746"/>
-                    <TextBox HorizontalAlignment="Left" Height="23" Margin="10,284,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-                    <Slider HorizontalAlignment="Left" Margin="246,284,0,0" VerticalAlignment="Top" Width="144"/>
+                    <TextBox x:Name="tb_DumpGPSLocation" Text="GPS:SteelKiller #2:24653.28:139987.92:-116475.34:" HorizontalAlignment="Left" Height="23" Margin="10,284,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="338"/>
                     <Label Content="Dump GPS Location:" HorizontalAlignment="Left" Margin="10,253,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.474,0.577"/>
-                    <CheckBox Content="By Fraction" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="194,259,0,0"/>
+
+                    <Slider x:Name="s_DumpRadius" HorizontalAlignment="Left" Margin="10,344,0,0" VerticalAlignment="Top" Width="144" Maximum="100" ValueChanged="Slider_ValueChanged"/>
+                    <Label Content="Dump Radius:" HorizontalAlignment="Left" Margin="10,313,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.474,0.577"/>
+                    <TextBox x:Name="t_DumpRadius" HorizontalAlignment="Left" Height="23" Margin="190,344,0,0" TextWrapping="Wrap" Text="10000" VerticalAlignment="Top" Width="63" PreviewTextInput="TextBox_PreviewTextInput" KeyDown="t_DumpRadius_KeyDown"/>
+                    <GroupBox Header="Login Time Control By" HorizontalAlignment="Left" Height="75" Margin="369,258,0,0" VerticalAlignment="Top" Width="142">
+                        <Grid HorizontalAlignment="Left" Height="74" Margin="0,0,-2,0" VerticalAlignment="Top" Width="132">
+                            <RadioButton x:Name="rb_LoginTimeControlIsFractions" Content="Fractions" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" GroupName="ControlBy" IsChecked="True"/>
+                            <RadioButton Content="Players" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" GroupName="ControlBy"/>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Move Grids To Dump" HorizontalAlignment="Left" Height="75" Margin="538,258,0,0" VerticalAlignment="Top" Width="143">
+                        <Grid HorizontalAlignment="Left" Height="94" Margin="0,0,-2,0" VerticalAlignment="Top" Width="133">
+                            <RadioButton x:Name="rb_MovingGridTypeIsAuto" Content="Auto" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" GroupName="MoveControl" IsChecked="True"/>
+                            <RadioButton Content="Manual" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" GroupName="MoveControl"/>
+                        </Grid>
+                    </GroupBox>
+                    <Label Content="M" HorizontalAlignment="Left" Margin="255,341,0,0" VerticalAlignment="Top"/>
                 </Grid>
             </TabItem>
             <TabItem Header="TabItem">
                 <Grid Background="#FFE5E5E5">
-                    <ListView HorizontalAlignment="Left" Height="263" Margin="10,62,0,0" VerticalAlignment="Top" Width="416">
+                    <ListView x:Name="lv_PlayersInfo" HorizontalAlignment="Left" Height="263" Margin="10,62,0,0" VerticalAlignment="Top" Width="416" SelectionChanged="lv_PlayersInfo_Selected">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="Player Name" Width="140">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Name}"/>
+                                            <TextBlock Text="{Binding Name}" TextAlignment="Center"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                                 <GridViewColumn Header="PCU Total" Width="100">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Grid>
-                                                <ProgressBar Value="{Binding PCU}"/>
-                                                <TextBlock Text="{Binding PCU, Converter={StaticResource pcuConverter}}"/>
+                                            <Grid Width="89" Margin="0,0,0,0">
+                                                <ProgressBar Value="{Binding PCUPercents}" Maximum="100" Width="Auto" Margin="5,0,5,0"/>
+                                                <TextBlock Text="{Binding PCU, Converter={StaticResource pcuConverter}}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Grid>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -56,31 +104,52 @@
                                 <GridViewColumn Header="Grids Amount" Width="100">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding GridAmount}"/>
+                                            <TextBlock Text="{Binding GridAmount}" TextAlignment="Center" Width="90"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                             </GridView>
                         </ListView.View>
+                        
                     </ListView>
                     <GroupBox Header="Player Info" HorizontalAlignment="Left" Height="315" Margin="451,10,0,0" VerticalAlignment="Top" Width="305">
                         <Grid>
-                            <Label Content="Name:" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="20,10,0,0"/>
-                            <TextBox Margin="20,36,129,237" IsEnabled="False"></TextBox>
+                            <Label Content="Name:" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="10,10,0,0"/>
+                            <TextBox x:Name="tb_PlayerName" Margin="10,36,139,237" IsEnabled="False"></TextBox>
+                            <Label Content="PCU Total:" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="203,10,0,0"/>
+                            <TextBox x:Name="tb_PlayerPCU" Margin="203,36,25,237" IsEnabled="False" Text="{Binding PCU, Converter={StaticResource pcuConverter}}"></TextBox>
+                            <Label Content="Grids:" HorizontalAlignment="Left"  VerticalAlignment="Top" Margin="14,97,0,0" RenderTransformOrigin="0.175,0.538"/>
 
-                            <ListView Margin="20,99,25,10">
-
+                            <ListView x:Name="lv_PlayerGrids" Margin="10,128,10,10" MouseDoubleClick="lv_PlayerGrids_MouseDoubleClick">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Name" Width="165">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DisplayName}" Width="157" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="PCU" Width="90">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding PCU}" Width="80" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
                             </ListView>
                         </Grid>
 
                     </GroupBox>
-                    <TextBox HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="Player Nmae, Grid Name, PCU" VerticalAlignment="Top" Width="416"/>
+                    <TextBox x:Name="tb_Search" HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="Player Name, Grid Name, (&gt; &lt; =)PCU " VerticalAlignment="Top" Width="416"/>
                     <Label Content="Search:" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top"/>
 
                 </Grid>
             </TabItem>
 
         </TabControl>
-        
+
     </Grid>
 </Window>

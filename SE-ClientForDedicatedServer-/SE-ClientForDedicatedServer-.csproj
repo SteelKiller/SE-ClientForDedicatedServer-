@@ -55,6 +55,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -73,8 +74,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Windows\PlayerInformationWindow.xaml.cs">
-      <DependentUpon>PlayerInformationWindow.xaml</DependentUpon>
+    <Compile Include="ApiFormatClasses\GridInformationFormat.cs" />
+    <Compile Include="ApiFormatClasses\Grids.cs" />
+    <Compile Include="ApiFormatClasses\PlayersInformationFormat.cs" />
+    <Compile Include="Settings\ServerConfig.cs" />
+    <Compile Include="Settings\Settings.cs" />
+    <Compile Include="Static\MyStatic.cs" />
+    <Compile Include="Windows\GridInformationWindow.xaml.cs">
+      <DependentUpon>GridInformationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\ServerManagerWindow.xaml.cs">
       <DependentUpon>ServerManagerWindow.xaml</DependentUpon>
@@ -91,7 +98,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Windows\PlayerInformationWindow.xaml">
+    <Page Include="Windows\GridInformationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

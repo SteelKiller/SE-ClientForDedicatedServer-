@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -14,7 +20,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using RestSharp;
+using SE_ClientForDedicatedServer_.ApiFormatClasses;
+using SE_ClientForDedicatedServer_.Settings;
+using SE_ClientForDedicatedServer_.Static;
 using SE_ClientForDedicatedServer_.Windows;
 
 namespace SE_ClientForDedicatedServer_
@@ -41,13 +51,35 @@ namespace SE_ClientForDedicatedServer_
             return pcu.ToString();
         }
 
-        private int PCUToPercents(int pcu, int maxPcu)
-        {
-            return pcu / maxPcu;
-        }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            return PCUTextBlock((int)value);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
+        }
+    }
+    internal class LastLoginOnlineConverter : IValueConverter
+    {
+        private string PCUTextBlock(DateTime lastOnline)
+        {
+            return lastOnline.ToString();
+        }
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            DateTime date = (DateTime)value;
+            int countDays = (DateTime.Now - date).Days;
+            if (countDays == 0)
+                return "Today";
+            if (countDays == 1)
+                return $"{countDays} Day Ago";
+
+            return $"{countDays} Days Ago";
+
+
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -64,77 +96,213 @@ namespace SE_ClientForDedicatedServer_
 
     public partial class MainWindow : Window
     {
-        private readonly string m_remoteUrl = "/vrageremote/{0}";
-        private readonly string m_securityKey = "V7ry55j2i3WTaLBYxDuFtg==";
-        private int m_nonce = 0;
+
+        private PlayersInformationFormat[] players;
+        private GridInformationFormat grids;
+        private GridInformationWindow gridInfWindow;
+        private DispatcherTimer Timer;
+
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        public RestRequest CreateRequest(string resourceLink, Method method,
-            params Tuple<string, string>[] queryParams)
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            string methodUrl = string.Format(m_remoteUrl, resourceLink);
-            RestRequest request = new RestRequest(methodUrl, method);
-            string date = DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture);
-            request.AddHeader("Date", date);
-            m_nonce = new Random().Next(0, int.MaxValue);
-            string nonce = m_nonce.ToString();
-            StringBuilder message = new StringBuilder();
-            message.Append(methodUrl);
-            if (queryParams.Length > 0)
-            {
-                message.Append("?");
-            }
-
-            for (int i = 0; i < queryParams.Length; i++)
-            {
-                var param = queryParams[i];
-                request.AddQueryParameter(param.Item1, param.Item2);
-                message.AppendFormat("{0}={1}", param.Item1, param.Item2);
-                if (i != queryParams.Length - 1)
-                {
-                    message.Append("&");
-                }
-            }
-
-            message.AppendLine();
-            message.AppendLine(nonce);
-            message.AppendLine(date);
-            byte[] messageBuffer = Encoding.UTF8.GetBytes(message.ToString());
-
-            byte[] key = Convert.FromBase64String(m_securityKey);
-            byte[] computedHash;
-            using (HMACSHA1 hmac = new HMACSHA1(key))
-            {
-                computedHash = hmac.ComputeHash(messageBuffer);
-            }
-
-            string hash = Convert.ToBase64String(computedHash);
-
-            request.AddHeader("Authorization", string.Format("{0}:{1}", nonce, hash));
-            return request;
+            Regex _regex = new Regex("[^0-9]+");
+            e.Handled = _regex.IsMatch(e.Text);
         }
+
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            /*ServerManagerWindow smw = new ServerManagerWindow();
+            ServerManagerWindow smw = new ServerManagerWindow();
             smw.Owner = this;
             smw.Show();
-            */
-            RestClient client = new RestClient("http://192.168.139.1:8080");
-            
-
-            Tuple<string, string>[] _params = new Tuple<string, string>[0];
-            //_params[0] = new Tuple<string, string>("","");
-
-            RestRequest request = CreateRequest("api", Method.GET, _params);
-            var response= client.Get(request);
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (smw.server != null)
             {
-                MessageBox.Show(response.Content);
+                MyStatic.Server = smw.server;
             }
+        }
+
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            t_DumpRadius.Text = (Math.Round(e.NewValue * 500)).ToString();
+        }
+
+
+        private void t_DumpRadius_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                s_DumpRadius.Value = Convert.ToInt32(t_DumpRadius.Text) / 500;
+            }
+        }
+
+        private void UpdateCustomAPI()
+        {
+            string response = MyStatic.CustomApiRequest("GetLastPlayersLoginTime");
+
+            if (!string.IsNullOrEmpty(response))
+            {
+                players = new JavaScriptSerializer().Deserialize<PlayersInformationFormat[]>(response);
+            }
+        }
+
+        private void UpdateVrageRemoteAPI()
+        {
+            string response = MyStatic.VrageRemoteApiRequest("session/grids",Method.GET);
+
+            if (!string.IsNullOrEmpty(response))
+            {
+                grids = new JavaScriptSerializer().Deserialize<GridInformationFormat>(response);
+            }
+        }
+
+        private void PlayersGridsRefresh()
+        {
+            for (int i = 0; i < grids.data.Grids.Length; i++)
+            {
+                for (int j = 0; j < players.Length; j++)
+                {
+                    if (grids.data.Grids[i].OwnerSteamId == players[j].UserId)
+                    {
+                        players[j].PCU += grids.data.Grids[i].PCU;
+                        players[j].grids.Add(grids.data.Grids[i]);
+                        players[j].GridAmount++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        private int GetMaxPCU()
+        {
+            int MaxPcu = 0;
+            for (int j = 0; j < players.Length; j++)
+            {
+                if (players[j].PCU > MaxPcu)
+                {
+                    MaxPcu = players[j].PCU;
+                }
+            }
+            return MaxPcu;
+        }
+
+        private void UpdateLists()
+        {
+            lv_PlyersActivity.Items.Clear();
+            lv_PlayersInfo.Items.Clear();
+            for (int i = 0; i < players.Length; i++)
+            {
+                lv_PlyersActivity.Items.Add(players[i]);
+            }
+
+            PlayersGridsRefresh();
+
+            int MaxPcu = GetMaxPCU();
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i].PCU != 0 || MaxPcu != 0)
+                    players[i].PCUPercents = (double)players[i].PCU / MaxPcu * 100;
+                lv_PlayersInfo.Items.Add(players[i]);
+
+            }
+        }
+
+        private void ListViewsUpdate()
+        {
+            UpdateCustomAPI();
+            UpdateVrageRemoteAPI();
+            if (grids == null)
+            {
+                MessageBox.Show($"ошибка загрузки данных grids");
+                return;
+            }
+            if (players == null)
+            {
+                MessageBox.Show($"ошибка загрузки данных players");
+                return;
+            }
+            UpdateLists();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+
+            Settings.Settings.LoadSettings();
+
+            gridInfWindow = new GridInformationWindow();
+
+            if ((MyStatic.Server = Settings.Settings.ServerForAutoStart()) == null)
+            {
+
+                ServerManagerWindow smw = new ServerManagerWindow();
+                smw.Owner = this;
+                smw.ShowDialog();
+                if (smw.server == null)
+                    return;
+                MyStatic.Server = smw.server;
+
+            }
+            ListViewsUpdate();
+            Timer = new DispatcherTimer();
+            Timer.Tick += new EventHandler(TimerTick);
+            Timer.Interval = new TimeSpan(0,0,3);
+            Timer.Start();
+        }
+
+        private void TimerTick(object sender, EventArgs e)
+        {
+            int LastSelectedIndex = lv_PlayersInfo.SelectedIndex;
+            ListViewsUpdate();
+            if (LastSelectedIndex >= lv_PlayersInfo.Items.Count)
+                LastSelectedIndex = lv_PlayersInfo.Items.Count-1;
+            lv_PlayersInfo.SelectedIndex = LastSelectedIndex;
+            /*if (gridInfWindow.IsActive)
+                gridInfWindow.GridInformationUpdate((_Grids)lv_PlayerGrids.SelectedItem);*/
+        }
+
+        private void SetPlayerInformation(PlayersInformationFormat player)
+        {
+            tb_PlayerName.Text = player.Name;
+            tb_PlayerPCU.Text = (string)new PCUConverter().Convert(player.PCU, null, null, null);
+            lv_PlayerGrids.ItemsSource = player.grids;
+        }
+
+        private void lv_PlayersInfo_Selected(object sender, RoutedEventArgs e)
+        {
+            if (lv_PlayersInfo.SelectedIndex != -1)
+            {
+                SetPlayerInformation((PlayersInformationFormat)((ListView)sender).SelectedItem);
+            }
+        }
+
+        private void lv_PlayerGrids_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (lv_PlayerGrids.SelectedItem == null)
+                return;
+          
+            if (!gridInfWindow.IsActive)
+                gridInfWindow.Show();
+            gridInfWindow.GridInformationUpdate((_Grids)lv_PlayerGrids.SelectedItem);
+        }
+
+        private void MenuItem_DumpManager_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void MenuItem_GridManager_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            gridInfWindow.CloseWindows();
+            Timer.Stop();
         }
     }
 }
